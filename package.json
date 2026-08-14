@@ -1,0 +1,134 @@
+{
+  "name": "capacitron",
+  "version": "0.1.0",
+  "description": "Capacitor-style plugin architecture for Electron: one IPC seam, typed plugins, a two-line preload",
+  "keywords": [
+    "electron",
+    "plugin",
+    "ipc",
+    "capacitor",
+    "preload",
+    "contextBridge",
+    "electron-vite",
+    "zod"
+  ],
+  "license": "MIT",
+  "author": "Abdelghani Beldjouhri <b4n92uid@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/b4n92uid/capacitron.git"
+  },
+  "bugs": {
+    "url": "https://github.com/b4n92uid/capacitron/issues"
+  },
+  "homepage": "https://github.com/b4n92uid/capacitron#readme",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./main": {
+      "import": {
+        "types": "./dist/main.d.ts",
+        "default": "./dist/main.mjs"
+      },
+      "require": {
+        "types": "./dist/main.d.cts",
+        "default": "./dist/main.cjs"
+      }
+    },
+    "./preload": {
+      "import": {
+        "types": "./dist/preload.d.ts",
+        "default": "./dist/preload.mjs"
+      },
+      "require": {
+        "types": "./dist/preload.d.cts",
+        "default": "./dist/preload.cjs"
+      }
+    },
+    "./renderer": {
+      "import": {
+        "types": "./dist/renderer.d.ts",
+        "default": "./dist/renderer.mjs"
+      },
+      "require": {
+        "types": "./dist/renderer.d.cts",
+        "default": "./dist/renderer.cjs"
+      }
+    },
+    "./global": {
+      "import": {
+        "types": "./dist/global.d.ts",
+        "default": "./dist/global.mjs"
+      },
+      "require": {
+        "types": "./dist/global.d.cts",
+        "default": "./dist/global.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "docs",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check:exports": "publint && attw --pack . --profile node16",
+    "prepublishOnly": "pnpm build && pnpm typecheck && pnpm check:exports"
+  },
+  "peerDependencies": {
+    "electron": ">=28",
+    "zod": "^4"
+  },
+  "peerDependenciesMeta": {
+    "electron": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.2",
+    "@eslint/js": "^9.34.0",
+    "@types/node": "^22.15.0",
+    "electron": "^38.0.0",
+    "eslint": "^9.34.0",
+    "prettier": "^3.6.2",
+    "publint": "^0.3.12",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.41.0",
+    "zod": "^4.1.5"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}
