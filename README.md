@@ -94,13 +94,14 @@ function createWindow(): void {
   }).loadURL(process.env['VITE_DEV_SERVER_URL'] ?? 'app://bundle/index.html');
 }
 
-void app.whenReady().then(() => {
-  registerPluginBridge(plugins); // <- the whole integration
-  createWindow();
-});
+registerPluginBridge(plugins); // <- the whole integration
+
+void app.whenReady().then(createWindow);
 ```
 
-Call `registerPluginBridge` before the first window loads, so no call can arrive unhandled.
+Register the bridge at the top level of the main module, before the app is ready, not inside
+`whenReady`. A plugin can also define `init(ctx)`: it runs after ready, in registry order, and IPC
+calls wait for it (see [Lifecycle](./docs/lifecycle.md)).
 There is no quit handler to write: `autoDispose` installs its own and awaits your plugins'
 teardown before the process exits.
 

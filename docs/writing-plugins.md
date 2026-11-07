@@ -81,7 +81,12 @@ registerPluginBridge(plugins, {
 });
 ```
 
-The default context is `{ userDataPath: app.getPath('userData') }`.
+The default context is `{ userDataPath }`, read from `app.getPath('userData')` on access.
+
+## Async setup
+
+Work that needs the app to be ready belongs in an optional `init(ctx)`, not in `create()`. It runs
+after ready, in registry order, and IPC calls wait for it. See [Lifecycle](./lifecycle.md#init).
 
 ## Compared to Capacitor
 

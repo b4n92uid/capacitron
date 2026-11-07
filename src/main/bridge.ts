@@ -27,6 +27,8 @@ export interface PluginBridgeOptions<TContext extends object> {
 export interface PluginBridge {
   dispose(): Promise<void>;
   readonly channels: PluginChannels;
+  /** Resolves once every plugin's `init` has run. Never rejects. */
+  readonly ready: Promise<void>;
 }
 
 interface Teardown {
@@ -55,17 +57,15 @@ export function registerPluginBridge<TContext extends object = BaseHostContext>(
     seen.add(plugin.name);
   }
 
-  const context =
-    options.context ?? ({ userDataPath: app.getPath('userData') } as unknown as TContext);
-
   const instances = new Map<string, PluginShape>();
   const schemas = new Map<string, PluginSchema>();
+  const contexts = new Map<string, PluginContext<PluginEvents, TContext>>();
   const teardowns: Teardown[] = [];
 
   for (const plugin of plugins) {
     const callbacks: Array<() => void | Promise<void>> = [];
     const ctx = {
-      ...context,
+      ...(options.context ?? {}),
       // Bound to this plugin's own name, so no plugin can emit as another.
       emit: (event: string, payload: unknown) =>
         broadcast(channels.event, plugin.name, event, payload),
@@ -74,10 +74,32 @@ export function registerPluginBridge<TContext extends object = BaseHostContext>(
       },
     } as PluginContext<PluginEvents, TContext>;
 
+    if (options.context === undefined) {
+      // Read on access, since an earlier plugin's create() may call app.setPath('userData').
+      Object.defineProperty(ctx, 'userDataPath', {
+        get: () => app.getPath('userData'),
+        enumerable: true,
+      });
+    }
+
+    contexts.set(plugin.name, ctx);
     instances.set(plugin.name, plugin.create(ctx));
     schemas.set(plugin.name, plugin.schema);
     teardowns.push({ name: plugin.name, callbacks });
   }
+
+  let initStarted = false;
+  const ready: Promise<void> = app.whenReady().then(async () => {
+    initStarted = true;
+    for (const plugin of plugins) {
+      if (!plugin.init) continue;
+      try {
+        await plugin.init(contexts.get(plugin.name)!);
+      } catch (error) {
+        console.error(`capacitron: plugin '${plugin.name}' failed to init`, error);
+      }
+    }
+  });
 
   ipcMain.handle(
     channels.invoke,
@@ -85,6 +107,7 @@ export function registerPluginBridge<TContext extends object = BaseHostContext>(
       let plugin = '';
       let method = '';
       try {
+        await ready;
         const parsed = envelopeSchema.parse(payload);
         plugin = parsed.plugin;
         method = parsed.method;
@@ -140,6 +163,7 @@ export function registerPluginBridge<TContext extends object = BaseHostContext>(
     disposed = true;
     removeAutoDispose?.();
     ipcMain.removeHandler(channels.invoke);
+    if (initStarted) await ready;
 
     // Reverse registration order, LIFO within a plugin: a later plugin may depend on an
     // earlier one still being alive.
@@ -162,13 +186,12 @@ export function registerPluginBridge<TContext extends object = BaseHostContext>(
     removeAutoDispose = installAutoDispose(dispose);
   }
 
-  return { dispose, channels };
+  return { dispose, channels, ready };
 }
 
 /**
- * Broadcasts to every live window rather than a tracked one: the bridge is normally built in
- * `whenReady`, before any window exists. With no window open the event is dropped, so a plugin
- * whose event can precede the first window must also expose a pull method for it.
+ * Broadcasts to every live window; an event emitted before the first window opens is dropped.
+ * A plugin whose event can precede it must also expose a pull method.
  */
 function broadcast(channel: string, plugin: string, event: string, payload: unknown): void {
   for (const win of BrowserWindow.getAllWindows()) {

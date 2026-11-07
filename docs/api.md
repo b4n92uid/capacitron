@@ -15,14 +15,23 @@ Safe in main, preload-adjacent code and renderer. Imports zod for types only.
 registerPluginBridge<TContext>(
   plugins: ReadonlyArray<ElectronPlugin<TContext>>,
   options?: {
-    context?: TContext;        // default { userDataPath: app.getPath('userData') }
+    context?: TContext;        // default { userDataPath }, read on access
     namespace?: string;        // default 'capacitron'
     autoDispose?: boolean;     // default true
     validateOutput?: boolean;  // default true
     canInvoke?(sender: WebContents, plugin: string, method: string): boolean;
   },
-): { dispose(): Promise<void>; channels: { invoke: string; event: string } };
+): {
+  dispose(): Promise<void>;
+  channels: { invoke: string; event: string };
+  ready: Promise<void>;
+};
 ```
+
+`ready` resolves once every plugin's `init` has run, and never rejects. IPC calls wait for it.
+
+`ElectronPlugin.init?(ctx): void | Promise<void>` runs after app ready, in registry order, one at a
+time. See [Lifecycle](./lifecycle.md).
 
 Re-exports everything from `capacitron`.
 

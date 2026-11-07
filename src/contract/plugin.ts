@@ -21,6 +21,8 @@ export interface ElectronPlugin<TContext extends object = BaseHostContext> {
   schema: PluginSchema;
   events?: PluginEvents;
   create(ctx: PluginContext<PluginEvents, TContext>): PluginShape;
+  /** Runs after app ready, in registry order, one at a time. IPC calls wait for all of them. */
+  init?(ctx: PluginContext<PluginEvents, TContext>): void | Promise<void>;
 }
 
 /**
@@ -36,6 +38,8 @@ export function definePlugin<
   schema: TSchema;
   events?: TEvents;
   create(ctx: PluginContext<TEvents, TContext>): PluginMethods<TSchema>;
+  /** Runs after app ready, in registry order, one at a time. IPC calls wait for all of them. */
+  init?(ctx: PluginContext<TEvents, TContext>): void | Promise<void>;
 }): ElectronPlugin<TContext> {
   return definition as unknown as ElectronPlugin<TContext>;
 }

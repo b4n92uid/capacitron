@@ -1,6 +1,6 @@
 {
   "name": "capacitron",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Capacitor-style plugin architecture for Electron: one IPC seam, typed plugins, a two-line preload",
   "keywords": [
     "electron",
